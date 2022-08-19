@@ -70,6 +70,12 @@ areadepth
 # 29    GOA          WESTERN GOA     Shumagin                915       501       700
 # 30    GOA          WESTERN GOA     Shumagin                916       701      1000
 
+# need to remove area estimate dups
+areadepth <- areadepth %>%
+  select(-area) %>%
+  distinct() %>%
+  arrange(regulatory_area_name, min_depth)
+
 # GOA bottom trawl survey (BTS) biomass ----
 
 query <- "select   survey, year, summary_area_depth, species_code,
@@ -111,6 +117,8 @@ biomass_dat <- bts %>%
                         year = unique(bts$year))) %>%
   arrange(strata, year) %>%
   write_csv(paste0(dat_path, "/goa_sst_biomass_", YEAR, ".csv"))
+
+biomass_dat %>% pivot_wider(id_cols = year, names_from = strata, values_from = biomass)
 
 # LLS Relative Population Weights ----
 
