@@ -30,13 +30,13 @@ channel_akfin <- odbcConnect("akfin", uid = username_akfin, pwd = password_akfin
 
 # INPFC = International North Pacific Fisheries Commission
 
-query <- "select distinct   survey, regulatory_area_name, inpfc_area, 
+query <- "select distinct   survey, regulatory_area_name, inpfc_area,
                             summary_area_depth, min_depth, max_depth, area
           from              afsc.race_goastrataaigoa
           where             survey = 'GOA'
           order by          regulatory_area_name asc, min_depth asc"
 
-areadepth <- sqlQuery(channel_akfin, query) %>% rename_all(tolower) 
+areadepth <- sqlQuery(channel_akfin, query) %>% rename_all(tolower)
 areadepth
 #     survey regulatory_area_name   inpfc_area summary_area_depth min_depth max_depth
 # 1     GOA          CENTRAL GOA     Chirikof                921         1       100
@@ -72,20 +72,20 @@ areadepth
 
 # GOA bottom trawl survey (BTS) biomass ----
 
-query <- "select   survey, year, summary_area_depth, species_code, 
+query <- "select   survey, year, summary_area_depth, species_code,
                    area_biomass as biomass, biomass_var as var,
                    haul_count, catch_count
           from     afsc.race_biomassinpfcdepthaigoa
           where    species_code in ('30020') and
                    survey = 'GOA'"
 
-bts <- sqlQuery(channel_akfin, query) %>% 
+bts <- sqlQuery(channel_akfin, query) %>%
   write_csv(paste0(raw_path, "/goabts_sst_raw_", YEAR, ".csv"))
 
-bts <- bts %>% 
-  rename_all(tolower) %>% 
-  left_join(areadepth) %>% 
-  rename(area_biomass = biomass) %>% 
+bts <- bts %>%
+  rename_all(tolower) %>%
+  left_join(areadepth) %>%
+  rename(area_biomass = biomass) %>%
   mutate(strata = case_when(regulatory_area_name == 'EASTERN GOA' & max_depth <= 500 ~ 'EGOA (0-500 m)',
                             regulatory_area_name == 'EASTERN GOA' & min_depth >= 501 & max_depth <= 700 ~ 'EGOA (501-700 m)',
                             regulatory_area_name == 'EASTERN GOA' & min_depth >= 701 ~ 'EGOA (701-1000 m)',
@@ -95,41 +95,41 @@ bts <- bts %>%
                             regulatory_area_name == 'WESTERN GOA' & max_depth <= 500 ~ 'WGOA (0-500 m)',
                             regulatory_area_name == 'WESTERN GOA' & min_depth >= 501 & max_depth <= 700 ~ 'WGOA (501-700 m)',
                             regulatory_area_name == 'WESTERN GOA' & min_depth >= 701 ~ 'WGOA (701-1000 m)'
-                            )) %>% 
+                            )) %>%
   arrange(strata, year)
 
+# 2020 status quo: assume strata that have a biomass estimate but no variance
+# (i.e. there was a catch = 1) has CV=0.1.
 bts %>% filter(area_biomass > 0 & is.na(var))
+bts <- bts %>% mutate(var = ifelse(area_biomass > 0 & is.na(var), (0.1 * area_biomass)^2, var))
 
-bts <- bts %>% 
-  mutate(var = ifelse(area_biomass > 0 & is.na(var), 0.1^2, var))
-
-biomass_dat <- bts %>% 
-  group_by(strata, year) %>% 
+biomass_dat <- bts %>%
+  group_by(strata, year) %>%
   dplyr::summarise(biomass = sum(area_biomass, na.rm = TRUE),
-                   cv = sqrt(sum(var, na.rm = TRUE)) / sum(area_biomass, na.rm = TRUE)) %>% 
+                   cv = sqrt(sum(var, na.rm = TRUE)) / sum(area_biomass, na.rm = TRUE)) %>%
  full_join(expand.grid(strata = unique(bts$strata),
                         year = unique(bts$year))) %>%
-  arrange(strata, year) %>% 
+  arrange(strata, year) %>%
   write_csv(paste0(dat_path, "/goa_sst_biomass_", YEAR, ".csv"))
 
 # LLS Relative Population Weights ----
 
 query <- "select   species_code, year, council_management_area, rpw, rpw_var
          from      afsc.lls_fmp_subarea_all_strata
-         where     species_code = '30020' and 
+         where     species_code = '30020' and
                    council_management_area in ('Central Gulf of Alaska', 'Eastern Gulf of Alaska', 'Western Gulf of Alaska') and
                    country in ('United States')
          order by  year asc"
 
-lls <- sqlQuery(channel_akfin, query) %>% 
-  rename_all(tolower) %>% 
+lls <- sqlQuery(channel_akfin, query) %>%
+  rename_all(tolower) %>%
   write_csv(paste0(raw_path, "/goalls_sst_raw_", YEAR, ".csv"))
 
-cpue_dat <- lls %>% 
+cpue_dat <- lls %>%
   mutate(strata = case_when(council_management_area == 'Central Gulf of Alaska' ~ 'CGOA',
                             council_management_area == 'Eastern Gulf of Alaska' ~ 'EGOA',
-                            council_management_area == 'Western Gulf of Alaska' ~ 'WGOA')) %>% 
-  group_by(strata, year) %>% 
+                            council_management_area == 'Western Gulf of Alaska' ~ 'WGOA')) %>%
+  group_by(strata, year) %>%
   dplyr::summarise(cpue = sum(rpw, na.rm = TRUE),
-                   cv = sqrt(sum(rpw_var, na.rm = TRUE)) / cpue) %>% 
-  write_csv(paste0(dat_path, "/goa_sst_rpw_", YEAR, ".csv")) 
+                   cv = sqrt(sum(rpw_var, na.rm = TRUE)) / cpue) %>%
+  write_csv(paste0(dat_path, "/goa_sst_rpw_", YEAR, ".csv"))
