@@ -38,37 +38,6 @@ query <- "select distinct   survey, regulatory_area_name, inpfc_area,
 
 areadepth <- sqlQuery(channel_akfin, query) %>% rename_all(tolower)
 areadepth
-#     survey regulatory_area_name   inpfc_area summary_area_depth min_depth max_depth
-# 1     GOA          CENTRAL GOA     Chirikof                921         1       100
-# 2     GOA          CENTRAL GOA       Kodiak                931         1       100
-# 3     GOA          CENTRAL GOA       Kodiak                932       101       200
-# 4     GOA          CENTRAL GOA     Chirikof                922       101       200
-# 5     GOA          CENTRAL GOA       Kodiak                933       201       300
-# 6     GOA          CENTRAL GOA     Chirikof                923       201       300
-# 7     GOA          CENTRAL GOA       Kodiak                934       301       500
-# 8     GOA          CENTRAL GOA     Chirikof                924       301       500
-# 9     GOA          CENTRAL GOA       Kodiak                935       501       700
-# 10    GOA          CENTRAL GOA     Chirikof                925       501       700
-# 11    GOA          CENTRAL GOA     Chirikof                926       701      1000
-# 12    GOA          CENTRAL GOA       Kodiak                936       701      1000
-# 13    GOA          EASTERN GOA Southeastern                951         1       100
-# 14    GOA          EASTERN GOA      Yakutat                941         1       100
-# 15    GOA          EASTERN GOA      Yakutat                942       101       200
-# 16    GOA          EASTERN GOA Southeastern                952       101       200
-# 17    GOA          EASTERN GOA      Yakutat                943       201       300
-# 18    GOA          EASTERN GOA Southeastern                953       201       300
-# 19    GOA          EASTERN GOA      Yakutat                944       301       500
-# 20    GOA          EASTERN GOA Southeastern                954       301       500
-# 21    GOA          EASTERN GOA Southeastern                955       501       700
-# 22    GOA          EASTERN GOA      Yakutat                945       501       700
-# 23    GOA          EASTERN GOA      Yakutat                946       701      1000
-# 24    GOA          EASTERN GOA Southeastern                956       701      1000
-# 25    GOA          WESTERN GOA     Shumagin                911         1       100
-# 26    GOA          WESTERN GOA     Shumagin                912       101       200
-# 27    GOA          WESTERN GOA     Shumagin                913       201       300
-# 28    GOA          WESTERN GOA     Shumagin                914       301       500
-# 29    GOA          WESTERN GOA     Shumagin                915       501       700
-# 30    GOA          WESTERN GOA     Shumagin                916       701      1000
 
 # need to remove area estimate dups
 areadepth <- areadepth %>%
