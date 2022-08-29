@@ -1,0 +1,5 @@
+model_name,objective_function,n_parameters,aic,delta_aic
+Model 22.2.c,52.3,6,116.7,0
+Model 22.2.b,57.1,5,124.3,7.6
+Model 22.2.a,60.1,5,130.2,13.5
+Model 22.1.b,68.6,4,145.2,28.5

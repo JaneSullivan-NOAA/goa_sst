@@ -34,18 +34,12 @@ oldadmb <- read_admb_re(filename = 'admb_original/RWOUT.REP',
                         cpue_strata_names = c('CGOA', 'EGOA', 'WGOA'))
 oldadmb$biomass_dat %>% filter(year == 1987)
 
-# Corrected version - this model structure was too complicated to easily fix the
-# error.
-# fixedadmb <- read_admb_re(filename = 'admb_fixed/RWOUT.REP',
-#                         model_name = 'Model 22.1.a',
-#                         biomass_strata_names = c('CGOA (0-500 m)', 'CGOA (501-700 m)', 'CGOA (701-1000 m)',
-#                                                  'EGOA (0-500 m)', 'EGOA (501-700 m)', 'EGOA (701-1000 m)',
-#                                                  'WGOA (0-500 m)', 'WGOA (501-700 m)', 'WGOA (701-1000 m)'),
-#                         cpue_strata_names = c('CGOA', 'EGOA', 'WGOA'))
+# pulled manually from std file (LL_est)
+oldadmb_predcpue <- read_csv('admb_original/pred_cpue.csv') %>%
+  mutate(model_name = 'Model 20') %>%
+  select(model_name, year, strata, pred, pred_lci, pred_uci)
 
-fixedadmb$biomass_dat %>% print(n=Inf)
-
-# TMB model with zeros as 0.0001 CV = 1000 ----
+# Model 22.1.a TMB model with zeros as 0.0001 CV = 1000 ----
 input <- prepare_rema_input(model_name = 'Model 22.1.a',
                             multi_survey = 1,
                             admb_re = oldadmb,
@@ -81,13 +75,16 @@ compare2 <- compare_rema_models(rema_models = list(m1))
 biomass_by_strata <- compare$output$biomass_by_strata
 total_predicted_biomass <- compare$output$total_predicted_biomass
 
+cpue_by_strata <- out1$cpue_by_strata %>%
+  bind_rows(oldadmb_predcpue)
+
 p1 <- ggplot(data = biomass_by_strata,
              aes(x = year, y = pred,
                  col = model_name)) +
   geom_ribbon(aes(ymin = pred_lci, ymax = pred_uci,
                   fill = model_name), col = NA,
               alpha = 0.25) +
-  geom_line(aes(lty = model_name)) +
+  geom_line() +
   facet_wrap(~strata, nrow = NULL) +
   geom_point(data = out1$biomass_by_strata, aes(x = year, y = obs), col = 'black') +
   geom_errorbar(data = out1$biomass_by_strata,
@@ -95,19 +92,32 @@ p1 <- ggplot(data = biomass_by_strata,
                 col = 'black', lty = 1) +
   scale_y_continuous(labels = scales::comma, expand = c(0.01, 0), limits = c(0, NA)) +
   labs(x = NULL, y = NULL, subtitle = 'Trawl survey biomass (t)',
-       fill = NULL, colour = NULL, shape = NULL, lty = NULL) +
+       fill = NULL, colour = NULL, shape = NULL) +
   ggplot2::scale_fill_viridis_d(direction = -1) +
   ggplot2::scale_colour_viridis_d(direction = -1) +
-  theme(legend.position = 'left')
+  theme(legend.position = 'none')
 
 p1
 
-p2 <- compare2$plots$cpue_by_strata +
+p2 <- ggplot(data = cpue_by_strata,
+                   aes(x = year, y = pred,
+                       col = model_name)) +
+  geom_ribbon(aes(ymin = pred_lci, ymax = pred_uci,
+                  fill = model_name), col = NA,
+              alpha = 0.25) +
+  geom_line() +
   facet_wrap(~strata, ncol = 1) +
-  theme(legend.position = 'none') +
-  labs(y = NULL, subtitle = 'Relative Population Weights')
+  geom_point(data = out1$cpue_by_strata, aes(x = year, y = obs), col = 'black') +
+  geom_errorbar(data = out1$cpue_by_strata,
+                aes(x = year, ymin = obs_lci, ymax = obs_uci),
+                col = 'black', lty = 1) +
+  scale_y_continuous(labels = scales::comma, expand = c(0.01, 0), limits = c(0, NA)) +
+  labs(x = NULL, y = NULL, subtitle = 'Longline survey RPW',
+       fill = NULL, colour = NULL, shape = NULL) +
+  ggplot2::scale_fill_viridis_d(direction = -1) +
+  ggplot2::scale_colour_viridis_d(direction = -1)
 
-plot_grid(p1, p2, ncol = 2, rel_widths = c(0.7, 0.3))
+plot_grid(p1, p2, ncol = 2, rel_widths = c(1.5, 1))
 
 ggsave(filename = paste0(out_path, '/M20_M22.1.a_fits.png'),
        dpi = 400, bg = 'white', units = 'in', height = 9, width = 14)
@@ -126,4 +136,4 @@ ggplot(data = total_predicted_biomass,
   ggplot2::scale_colour_viridis_d(direction = -1)
 
 ggsave(filename = paste0(out_path, '/M20_M22.1.a_totalbiomass.png'),
-       dpi = 400, bg = 'white', units = 'in', height = 4, width = 7)
+       dpi = 400, bg = 'white', units = 'in', height = 3.5, width = 8)
