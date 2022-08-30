@@ -10,7 +10,7 @@ if(length(libs[which(libs %in% rownames(installed.packages()) == FALSE )]) > 0) 
 lapply(libs, library, character.only = TRUE)
 
 # install.packages("devtools")
-devtools::install_github("JaneSullivan-NOAA/rema", dependencies = TRUE)
+# devtools::install_github("JaneSullivan-NOAA/rema", dependencies = TRUE)
 library(rema)
 
 # folder set up
@@ -441,3 +441,33 @@ out2$total_predicted_biomass %>%
   filter(year %in% c(2020,2021)) %>%
   pivot_wider(id_cols = model_name, names_from = year, values_from = pred) %>%
   mutate(percent_change = (`2021`-`2020`)/`2020`)
+
+# sensitivity of 1984/1987 surveys ----
+
+input <- prepare_rema_input(model_name = 'Model 22.2.c no 1984/87 BTS',
+                            multi_survey = 1,
+                            biomass_dat = biomass_dat %>%
+                              filter(!year %in% c(1984, 1987)),
+                            cpue_dat = cpue_dat,
+                            # start_year = 1984,
+                            end_year = YEAR,
+                            sum_cpue_index = TRUE,
+                            PE_options = list(pointer_PE_biomass = c(1, 1, 1, 2, 2, 2, 3, 3, 3)),
+                            q_options = list(
+                              pointer_biomass_cpue_strata = c(1, 1, 1, 2, 2, 2, 3, 3, 3),
+                              pointer_q_cpue = c(1, 1, 1)),
+                            zeros = list(assumption = 'small_constant',
+                                         options_small_constant = c(0.0001, 1000)),
+                            # ESTIMATE EXTRA biomass CV
+                            extra_biomass_cv = list(assumption = 'extra_cv'),
+                            # ESTIMATE EXTRA LLS RPW CV
+                            extra_cpue_cv = list(assumption = 'extra_cv'))
+
+m5_no1980s <- fit_rema(input)
+outm5_no1980s <- tidy_rema(m5_no1980s)
+outm5_no1980s$parameter_estimates
+
+compare <- compare_rema_models(list(m5, m5_no1980s))
+compare$plots$biomass_by_strata
+compare$plots$total_predicted_biomass
+compare$output$parameter_estimates
