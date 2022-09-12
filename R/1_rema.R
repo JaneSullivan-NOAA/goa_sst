@@ -35,7 +35,7 @@ cpue_dat <- read_csv(paste0(dat_path, "/goa_sst_rpw_", YEAR, ".csv"))
 # Example using GOA shortspine thornyhead, which has different strata
 # definitions for the biomass and CPUE surveys.
 admb_re <- read_admb_re(filename = 'admb_original/RWOUT.REP',
-                        model_name = 'Model 20',
+                        model_name = 'Model 18',
                         biomass_strata_names = c('CGOA (0-500 m)', 'CGOA (501-700 m)', 'CGOA (701-1000 m)',
                                                  'EGOA (0-500 m)', 'EGOA (501-700 m)', 'EGOA (701-1000 m)',
                                                  'WGOA (0-500 m)', 'WGOA (501-700 m)', 'WGOA (701-1000 m)'),
@@ -78,7 +78,7 @@ biomass_dat %>%
   arrange(year) %>%
   write_csv(paste0(out_path, '/biomass_data_wide.csv'))
 
-# Model 22.1.a corrected Model 20 in TMB with 2020 data ----
+# Model 22.1.a corrected Model 18 in TMB with 2020 data ----
 input <- prepare_rema_input(model_name = 'Model 22.1.a',
                             multi_survey = 1,
                             admb_re = admb_re,
@@ -102,7 +102,7 @@ m1 <- fit_rema(input)
 out1 <- tidy_rema(m1)
 out1$parameter_estimates
 
-# Model 22.1.b fixed Model 20 in TMB with updated 2021 data -----
+# Model 22.1.b fixed Model 18 in TMB with updated 2021 data -----
 input <- prepare_rema_input(model_name = 'Model 22.1.b',
                             multi_survey = 1,
                             biomass_dat = biomass_dat,
@@ -242,8 +242,8 @@ ggsave(filename = paste0(out_path, '/M22.1.a_M22.1.b_totalbiomass.png'),
 compare <- compare_rema_models(rema_models = list(m2, m3, m4, m5),
                                biomass_ylab = 'Biomass (t)',
                                cpue_ylab = 'Relative Population Weights')
-compare$aic %>%
-  write_csv()
+compare$aic %>% write_csv(paste0(out_path, '/aic.csv'))
+
 cowplot::plot_grid(compare$plots$biomass_by_strata +
                      theme(legend.position = 'none') +
                      geom_line(size = 0.8) +
@@ -293,7 +293,7 @@ compare$plots$total_predicted_biomass +
   labs(x = NULL, y = NULL, subtitle = 'Total predicted biomass (t)',
        fill = NULL, colour = NULL) +
   geom_line(size = 0.8)
-ggsave(filename = paste0(out_path, '/M20_M22.1.b_M22.2.c_M22.3_totalbiomass.png'),
+ggsave(filename = paste0(out_path, '/M18_M22.1.b_M22.2.c_M22.3_totalbiomass.png'),
        dpi = 400, bg = 'white', units = 'in', height = 3.5, width = 8)
 
 # save output ----
@@ -301,7 +301,7 @@ ggsave(filename = paste0(out_path, '/M20_M22.1.b_M22.2.c_M22.3_totalbiomass.png'
 compare <- compare_rema_models(list(m1, m2, m3, m4, m5, m6))
 
 # model 20 parameter estimates (pulled from re.std in original_admb)
-data.frame(model_name = 'Model 20',
+data.frame(model_name = 'Model 18',
            parameter = c('log_q', 'log_pe_cgoa', 'log_pe_egoa', 'log_pe_wgoa'),
            est = c(-4.8615e-01, -2.6580e+00, -1.7364e+00, -2.2476e+00),
            se = c(1.1597e-02, 2.1528e-01, 1.7461e-01, 1.9868e-01)) %>%
@@ -310,7 +310,7 @@ data.frame(model_name = 'Model 20',
          lci = exp(est - qnorm(1 - 0.05/2) * se),
          uci = exp(est + qnorm(1 - 0.05/2) * se)) %>%
   select(-est, - se) %>%
-  write_csv(paste0(out_path, '/M20_parameters.csv'))
+  write_csv(paste0(out_path, '/M18_parameters.csv'))
 
 compare$output$parameter_estimates %>%
   write_csv(paste0(out_path, '/M22.1.ab_M22.2.abc_M22.3_paramaters.csv'))
@@ -323,7 +323,7 @@ biom <- compare$output$biomass_by_strata %>%
   bind_rows(compare$output$total_predicted_biomass %>%
               mutate(strata = 'Total') %>%
               pivot_wider(id_cols = c(strata, year), names_from = model_name, values_from = pred)) %>%
-  write_csv(paste0(out_path, '/M20_M22.1.ab_M22.2.abc_M22.3_biomass_pred.csv'))
+  write_csv(paste0(out_path, '/M18_M22.1.ab_M22.2.abc_M22.3_biomass_pred.csv'))
 
 # apportionment
 appo <- compare$output$biomass_by_strata %>%
@@ -341,7 +341,7 @@ appo <- compare$output$biomass_by_strata %>%
 
 appo %>%
   pivot_wider(id_cols = c(strata, year), names_from = model_name, values_from = proportion) %>%
-  write_csv(paste0(out_path, '/M20_M22.1.ab_M22.2.abc_M22.3_apportionment.csv'))
+  write_csv(paste0(out_path, '/M18_M22.1.ab_M22.2.abc_M22.3_apportionment.csv'))
 
 full_sumtable <- appo %>%
   filter(year == YEAR) %>%
@@ -349,19 +349,30 @@ full_sumtable <- appo %>%
          OFL = natmat * total_biomass,
          maxABC = 0.75 * natmat * total_biomass,
          ABC = maxABC)
+
 sumtable <- full_sumtable %>%
   distinct(model_name, year, biomass = total_biomass, OFL, maxABC) %>%
   select(model_name, year, biomass, OFL, maxABC)
 
-statquo_biomass <- sumtable %>% filter(model_name == 'Model 20') %>% pull(biomass)
-# statquo_OFL <- sumtable %>% filter(model_name == 'Model 20') %>% pull(OFL)
-# statquo_maxABC <- sumtable %>% filter(model_name == 'Model 20') %>% pull(maxABC)
+statquo_biomass <- sumtable %>% filter(model_name == 'Model 18') %>% pull(biomass)
+# statquo_OFL <- sumtable %>% filter(model_name == 'Model 18') %>% pull(OFL)
+# statquo_maxABC <- sumtable %>% filter(model_name == 'Model 18') %>% pull(maxABC)
 
 sumtable %>%
+  filter(model_name %in% c('Model 18', 'Model 22.1.a')) %>%
+  mutate(year = 2020,
+         percent_change = (biomass - statquo_biomass)/statquo_biomass * 100) %>%
+  write_csv(paste0(out_path, '/abc_ofl_summary_2020.csv'))
+
+statquo_biomass <- sumtable %>% filter(model_name == 'Model 22.1.b') %>% pull(biomass)
+
+sumtable %>%
+  filter(!model_name %in% c('Model 18', 'Model 22.1.a')) %>%
   mutate(percent_change = (biomass - statquo_biomass)/statquo_biomass * 100) %>%
-  write_csv(paste0(out_path, '/abc_ofl_summary.csv'))
+  write_csv(paste0(out_path, '/abc_ofl_summary_2022.csv'))
 
 full_sumtable %>%
+  mutate(year = ifelse(model_name %in% c('Model 18', 'Model 22.1.a'), 2020, year)) %>%
   pivot_wider(id_cols = c(model_name, year), names_from = strata, values_from = proportion) %>%
   write_csv(paste0(out_path, '/apportionment_summary.csv'))
 

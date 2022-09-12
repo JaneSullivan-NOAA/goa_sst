@@ -1,6 +1,6 @@
 # This script compares the following models using the data from the 2020 GOA
 # thornyheads assessment (using data as presented in 2020):
-# 1. Status quo (Model 20): this is the incorrect version of ADMB where
+# 1. Status quo (Model 18): this is the incorrect version of ADMB where
 # predicted CPUE is defined outside of the SEPARABLE_FUNCTION.
 # 2. Model 22.1.a:  the corrected version of Model 20 in TMB
 
@@ -27,7 +27,7 @@ ggplot2::theme_set(cowplot::theme_cowplot(font_size = 12) +
 
 # Incorrect version
 oldadmb <- read_admb_re(filename = 'admb_original/RWOUT.REP',
-                        model_name = 'Model 20',
+                        model_name = 'Model 18',
                         biomass_strata_names = c('CGOA (0-500 m)', 'CGOA (501-700 m)', 'CGOA (701-1000 m)',
                                                  'EGOA (0-500 m)', 'EGOA (501-700 m)', 'EGOA (701-1000 m)',
                                                  'WGOA (0-500 m)', 'WGOA (501-700 m)', 'WGOA (701-1000 m)'),
@@ -36,7 +36,7 @@ oldadmb$biomass_dat %>% filter(year == 1987)
 
 # pulled manually from std file (LL_est)
 oldadmb_predcpue <- read_csv('admb_original/pred_cpue.csv') %>%
-  mutate(model_name = 'Model 20') %>%
+  mutate(model_name = 'Model 18') %>%
   select(model_name, year, strata, pred, pred_lci, pred_uci)
 
 # Model 22.1.a TMB model with zeros as 0.0001 CV = 1000 ----
@@ -119,7 +119,7 @@ p2 <- ggplot(data = cpue_by_strata,
 
 plot_grid(p1, p2, ncol = 2, rel_widths = c(1.5, 1))
 
-ggsave(filename = paste0(out_path, '/M20_M22.1.a_fits.png'),
+ggsave(filename = paste0(out_path, '/M18_M22.1.a_fits.png'),
        dpi = 400, bg = 'white', units = 'in', height = 9, width = 14)
 
 ggplot(data = total_predicted_biomass,
@@ -135,5 +135,5 @@ ggplot(data = total_predicted_biomass,
   ggplot2::scale_fill_viridis_d(direction = -1) +
   ggplot2::scale_colour_viridis_d(direction = -1)
 
-ggsave(filename = paste0(out_path, '/M20_M22.1.a_totalbiomass.png'),
+ggsave(filename = paste0(out_path, '/M18_M22.1.a_totalbiomass.png'),
        dpi = 400, bg = 'white', units = 'in', height = 3.5, width = 8)
