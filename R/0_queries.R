@@ -89,8 +89,10 @@ biomass_dat <- bts %>%
   write_csv(paste0(dat_path, "/goa_sst_biomass_", YEAR, ".csv"))
 
 biomass_dat %>% pivot_wider(id_cols = year, names_from = strata, values_from = biomass)
-bts %>% filter(year == 1987 & strata %in% c("EGOA (0-500 m)", "EGOA (501-700 m)", "EGOA (701-1000 m)"))  %>% # 946 = Yak, 956 = Southeastern
-  group_by(strata) %>% summarize(sum(area_biomass))
+bts %>%
+  filter(year == 1987 & strata %in% c("EGOA (0-500 m)", "EGOA (501-700 m)", "EGOA (701-1000 m)"))  %>% # 946 = Yak, 956 = Southeastern
+  group_by(strata) %>%
+  summarize(sum(area_biomass))
 
 # LLS Relative Population Weights ----
 
